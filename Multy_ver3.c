@@ -4,13 +4,13 @@
 #define MAX_DEGREE 101 // 다항식의 최대차수 + 1
 
 typedef struct {
-    float x_coef[MAX_DEGREE];
+    int x_coef[MAX_DEGREE];
     int x_degree[MAX_DEGREE];
 
-    float y_coef[MAX_DEGREE];
+    int y_coef[MAX_DEGREE];
     int y_degree[MAX_DEGREE];
 
-    float z_coef[MAX_DEGREE];
+    int z_coef[MAX_DEGREE];
     int z_degree[MAX_DEGREE];
 } polynomial;
 
@@ -18,11 +18,11 @@ void print_polynomial(polynomial *p, int term){
     printf("============================\n");
     for(int i=0;i<=term;i++){
         printf("term: %d\n\n", i);
-        printf("x_coef: %f\n", p->x_coef[i]);
+        printf("x_coef: %d\n", p->x_coef[i]);
         printf("x_degree: %d\n", p->x_degree[i]);
-        printf("y_coef: %f\n", p->y_coef[i]);
+        printf("y_coef: %d\n", p->y_coef[i]);
         printf("y_degree: %d\n", p->y_degree[i]);
-        printf("z_coef: %f\n", p->z_coef[i]);
+        printf("z_coef: %d\n", p->z_coef[i]);
         printf("z_degree: %d\n", p->z_degree[i]);
         printf("==============================\n");
     }
@@ -135,6 +135,134 @@ void normalize(char *src, char *result) {
     
 }
 
+int parser(polynomial *p, char *str){
+    int index = 0;
+    int sign = 0;
+    int coef_buffer = 0;
+    int degree_buffer = 0;
+    int term = -1;
+    int xyz_mode = -1; // 차수가 x, y, z중 뭐에 대한 차수인지 알려줌, 0:x, 1:y, 2:z
+    while(1){
+        if(str[index] == '\0'){
+            if(xyz_mode != -1){
+                switch (xyz_mode)
+                {
+                case 0:
+                    p->x_degree[term] = degree_buffer;
+                    break;
+                case 1:
+                    p->y_degree[term] = degree_buffer;
+                    break;
+                case 2:
+                    p->z_degree[term] = degree_buffer;
+                    break;
+                }
+                xyz_mode = -1;
+                degree_buffer = 0;
+            }
+            else if(xyz_mode == -1){
+                // 상수항 처리
+                p->x_coef[term] = coef_buffer;
+            }
+            break;
+        }
+        else if(str[index] == '+'){
+            term++;
+            sign = 0;
+            if(xyz_mode != -1){
+                switch (xyz_mode)
+                {
+                case 0:
+                    p->x_degree[term-1] = degree_buffer;
+                    break;
+                case 1:
+                    p->y_degree[term-1] = degree_buffer;
+                    break;
+                case 2:
+                    p->z_degree[term-1] = degree_buffer;
+                    break;
+                }
+                xyz_mode = -1;
+                degree_buffer = 0;
+            }
+        }
+        else if(str[index] == '-'){
+            term++;
+            sign = 1;
+            if(xyz_mode != -1){
+                switch (xyz_mode)
+                {
+                case 0:
+                    p->x_degree[term-1] = degree_buffer;
+                    break;
+                case 1:
+                    p->y_degree[term-1] = degree_buffer;
+                    break;
+                case 2:
+                    p->z_degree[term-1] = degree_buffer;
+                    break;
+                }
+                xyz_mode = -1;
+                degree_buffer = 0;
+            }
+        }
+        else if(str[index] >= '0' && str[index] <= '9'){
+            if(xyz_mode == -1){
+                // 계수 쌓기
+                coef_buffer*=10;
+                coef_buffer+=str[index]-'0';
+            }
+            else{
+                // 차수 쌓기
+                degree_buffer*=10;
+                degree_buffer+=str[index] - '0';
+            }
+            
+        }
+        else if(str[index] == 'x' || str[index] == 'y' || str[index] == 'z'){
+            if(coef_buffer == 0) coef_buffer = 1;
+            if(sign == 1) coef_buffer*=-1;
+            switch (str[index])
+            {
+            case 'x':
+                p->x_coef[term] = coef_buffer;
+                xyz_mode = 0;
+                break;
+            case 'y':
+                p->y_coef[term] = coef_buffer;
+                xyz_mode = 1;
+                break;
+            case 'z':
+                p->z_coef[term] = coef_buffer;
+                xyz_mode = 2;
+                break;
+            }
+            coef_buffer = 0;
+            sign = 0;
+        }
+        else if(str[index] == '*'){
+            if(xyz_mode != -1){
+                switch (xyz_mode)
+                {
+                case 0:
+                    p->x_degree[term] = degree_buffer;
+                    break;
+                case 1:
+                    p->y_degree[term] = degree_buffer;
+                    break;
+                case 2:
+                    p->z_degree[term] = degree_buffer;
+                    break;
+                }
+                xyz_mode = -1;
+                degree_buffer = 0;
+            }
+        }
+        index++;
+    }
+    return term;
+}
+
 int main(){
     polynomial a;
     polynomial b;
@@ -142,6 +270,8 @@ int main(){
     char b_str[100];
     char a_str_norm[100];
     char b_str_norm[100];
+    int a_term = 0;
+    int b_term = 0;
     printf("A: ");
     gets(a_str);
     //printf("B: ");
@@ -150,14 +280,11 @@ int main(){
     // 다항식 리셋
     polynomial_reset(&a);
     
-    printf("Before normalizing:\n%s\n", a_str);
-    //printf("Before normalizing:\n%s\n%s\n", a_str, b_str);
-
     normalize(a_str, a_str_norm);
     //normalize(b_str, b_str_norm);
 
-    printf("Normalized:\n%s\n", a_str_norm);
-    //printf("Normalized:\n%s\n%s\n", a_str_norm, b_str_norm);
+    a_term = parser(&a, a_str_norm);
+    print_polynomial(&a, a_term);
     return 0;
     
 }
