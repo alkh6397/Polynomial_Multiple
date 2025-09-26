@@ -162,6 +162,7 @@ int parser(polynomial *p, char *str){
             }
             else if(xyz_mode == -1){
                 // 상수항 처리
+                if(sign == 1) coef_buffer*=-1;
                 p->x_coef[term] = coef_buffer;
             }
             break;
@@ -263,28 +264,64 @@ int parser(polynomial *p, char *str){
     return term;
 }
 
+void multiple(polynomial *a, polynomial *b, polynomial *c, int a_term, int b_term, int *c_term){
+    for(int i=0;i<=a_term;i++){
+        for(int j=0;j<=b_term;j++){
+            c->x_coef[*c_term] = a->x_coef[i] * b->x_coef[j];
+            c->x_degree[*c_term] = a->x_degree[i] + b->x_degree[j];
+            c->y_coef[*c_term] = a->y_coef[i] * b->y_coef[j];
+            c->y_degree[*c_term] = a->y_degree[i] + b->y_degree[j];
+            c->z_coef[*c_term] = a->z_coef[i] * b->z_coef[j];
+            c->z_degree[*c_term] = a->z_degree[i] + b->z_degree[j];
+            
+            // 변수가 하나인 경우 계수 붙이기 처리
+            if(c->x_degree[*c_term] == 0 && c->y_degree[*c_term] == 0){
+                c->z_coef[*c_term] = c->x_coef[*c_term] * c->y_coef[*c_term] * c->z_coef[*c_term];
+                c->x_coef[*c_term] = 1;
+                c->y_coef[*c_term] = 1;
+            }
+            else if(c->x_degree[*c_term] == 0 && c->z_degree[*c_term] == 0){
+                c->y_coef[*c_term] = c->x_coef[*c_term] * c->y_coef[*c_term] * c->z_coef[*c_term];
+                c->x_coef[*c_term] = 1;
+                c->z_coef[*c_term] = 1;
+            }
+            else if(c->y_degree[*c_term] == 0 && c->z_degree[*c_term] == 0){
+                c->x_coef[*c_term] = c->x_coef[*c_term] * c->y_coef[*c_term] * c->z_coef[*c_term];
+                c->y_coef[*c_term] = 1;
+                c->z_coef[*c_term] = 1;
+            }
+            (*c_term)++;
+        }
+    }
+
+}
 int main(){
     polynomial a;
     polynomial b;
+    polynomial c;
     char a_str[100];
     char b_str[100];
     char a_str_norm[100];
     char b_str_norm[100];
     int a_term = 0;
     int b_term = 0;
+    int c_term = 0;
     printf("A: ");
     gets(a_str);
-    //printf("B: ");
-    //gets(b_str);
+    printf("B: ");
+    gets(b_str);
     
     // 다항식 리셋
     polynomial_reset(&a);
-    
+    polynomial_reset(&b);
+    polynomial_reset(&c);
     normalize(a_str, a_str_norm);
-    //normalize(b_str, b_str_norm);
+    normalize(b_str, b_str_norm);
 
     a_term = parser(&a, a_str_norm);
-    print_polynomial(&a, a_term);
+    b_term = parser(&b, b_str_norm);
+
+    multiple(&a, &b, &c, a_term, b_term, &c_term);
+    print_polynomial(&c, c_term-1);
     return 0;
-    
 }
