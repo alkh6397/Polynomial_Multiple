@@ -264,6 +264,45 @@ int parser(polynomial *p, char *str){
     return term;
 }
 
+void sort(polynomial *c, int c_term){
+    int max = c->y_degree[0];
+    int max_index = 0;
+    int temp_x_coef = 0;
+    int temp_x_degree = 0;
+    int temp_y_coef = 0;
+    int temp_y_degree = 0;
+    int temp_z_coef = 0;
+    int temp_z_degree = 0;
+    for(int i=0;i<=c_term;i++){
+        max = c->y_degree[i];
+        max_index = i;
+        for(int j=i;j<=c_term;j++){
+            if(c->y_degree[j]>max){
+                max = c->y_degree[j];
+                max_index = j;
+            }
+        }
+        temp_x_coef = c->x_coef[i];
+        temp_x_degree = c->x_degree[i];
+        temp_y_coef = c->y_coef[i];
+        temp_y_degree = c->y_degree[i];
+        temp_z_coef = c->z_coef[i];
+        temp_z_degree = c->z_degree[i];
+        c->x_coef[i] = c->x_coef[max_index];
+        c->x_degree[i] = c->x_degree[max_index];
+        c->y_coef[i] = c->y_coef[max_index];
+        c->y_degree[i] = c->y_degree[max_index];
+        c->z_coef[i] = c->z_coef[max_index];
+        c->z_degree[i] = c->z_degree[max_index];
+        c->x_coef[max_index] = temp_x_coef;
+        c->x_degree[max_index] = temp_x_degree;
+        c->y_coef[max_index] = temp_y_coef;
+        c->y_degree[max_index] = temp_y_degree;
+        c->z_coef[max_index] = temp_z_coef;
+        c->z_degree[max_index] = temp_z_degree;
+    }
+}
+
 void multiple(polynomial *a, polynomial *b, polynomial *c, int a_term, int b_term, int *c_term){
     for(int i=0;i<=a_term;i++){
         for(int j=0;j<=b_term;j++){
@@ -295,6 +334,106 @@ void multiple(polynomial *a, polynomial *b, polynomial *c, int a_term, int b_ter
     }
 
 }
+
+void result_print(polynomial *c, int c_term){
+    for(int i=0;i<=c_term;i++){
+        //printf("Term %dth: ", i);
+        // 부호 출력 파트
+        if(c->x_coef[i] * c->y_coef[i] * c->z_coef[i] >= 0){
+            // 양수
+            // 첫 항은 +부호를 출력하지 않으므로 i!=0 일 때만 + 출력
+            if(i!=0) printf("+");
+        }
+        else{
+            // 음수
+            printf("-");
+        }
+
+        // Y항 출력 파트
+        if(c->y_coef[i] == 1 && c->y_degree[i] == 0){
+            // Y항 없음
+        }
+        else{
+            // Y항 계수 출력 파트
+            if(c->y_coef[i] == 1){
+                // 계수 1일 경우 생략
+            }
+            else{
+                // 부호 이미 출력했으므로 계수는 절댓값으로 출력
+                if(c->y_coef[i]<0) printf("%d", abs(c->y_coef[i]));
+                else printf("%d", c->y_coef[i]);
+            }
+        }
+        // Y항 문자 및 차수 출력 파트
+        if(c->y_degree[i] == 0){
+            
+        }
+        else{
+            printf("y^%d", c->y_degree[i]);
+        }
+        ///////////////////////////////////////////////////////////////////////////////
+
+        // X항 출력 파트
+        if(c->x_coef[i] == 1 && c->x_degree[i] == 0){
+            // X항 없음
+        }
+        else{
+            // 앞에 Y항이 있었다면 X항 내용을 출력하기 전에 *를 출력함
+            if(c->y_coef[i] != 1 || c->y_degree[i] != 0){
+                // 둘 중에 하나라도 default 값이 아니면 y항이 있었다는 뜻이므로
+                // *출력
+                printf("*");
+            }
+            // X항 계수 출력 파트
+            if(c->x_coef[i] == 1){
+                // 계수 1일 경우 생략
+            }
+            else{
+                // 부호 이미 출력했으므로 계수는 절댓값으로 출력
+                if(c->x_coef[i]<0) printf("%d", abs(c->x_coef[i]));
+                else printf("%d", c->x_coef[i]);
+            }
+        }
+        // X항 문자 및 차수 출력 파트
+        if(c->x_degree[i] == 0){
+            
+        }
+        else{
+            printf("x^%d", c->x_degree[i]);
+        }
+        ///////////////////////////////////////////////////////////////////////////
+
+        // Z항 출력 파트
+        if(c->z_coef[i] == 1 && c->z_degree[i] == 0){
+            // Z항 없음
+        }
+        else{
+            // 앞에 Y항 또는 X항이 있었다면 Z항 내용을 출력하기 전에 *를 출력함
+            if(c->y_coef[i] != 1 || c->y_degree[i] != 0 || c->x_coef[i] != 1 || c->x_degree[i] != 0){
+                // 넷 중에 하나라도 default 값이 아니면 y항 또는 x항이 있었다는 뜻이므로
+                // *출력
+                printf("*");
+            }
+            // Z항 계수 출력 파트
+            if(c->z_coef[i] == 1){
+                // 계수 1일 경우 생략
+            }
+            else{
+                // 부호 이미 출력했으므로 계수는 절댓값으로 출력
+                if(c->z_coef[i]<0) printf("%d", abs(c->z_coef[i]));
+                else printf("%d", c->z_coef[i]);
+            }
+        }
+        // Z항 문자 및 차수 출력 파트
+        if(c->z_degree[i] == 0){
+            
+        }
+        else{
+            printf("z^%d", c->z_degree[i]);
+        }
+        //printf("\n");
+    }
+}
 int main(){
     polynomial a;
     polynomial b;
@@ -322,6 +461,8 @@ int main(){
     b_term = parser(&b, b_str_norm);
 
     multiple(&a, &b, &c, a_term, b_term, &c_term);
-    print_polynomial(&c, c_term-1);
+    sort(&c, c_term-1);
+    //print_polynomial(&c, c_term-1);
+    result_print(&c, c_term-1);
     return 0;
 }
